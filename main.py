@@ -34,6 +34,14 @@ def login():
     try:
         response = supabase.auth.sign_in_with_password({"email": email, "password": password})
 
+        user_data = {
+            "id": response.user.id,
+            "email": response.user.email,
+            "created_at": response.user.created_at,
+            "aud": response.user.aud,
+            "role": response.user.role
+        }
+
         session_data = {
             "access_token": response.session.access_token,
             "refresh_token": response.session.refresh_token,
@@ -42,7 +50,7 @@ def login():
         }
 
         return jsonify({
-            "user": response.user,
+            "user": user_data,
             "session": session_data
         })
     except Exception as e:
