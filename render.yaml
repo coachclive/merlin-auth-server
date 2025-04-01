@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: merlin-auth-server
+    env: python
+    buildCommand: ""
+    startCommand: "python main.py"
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
