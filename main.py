@@ -32,13 +32,14 @@ def login():
     email = data.get("email")
     password = data.get("password")
     try:
-        result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        response = supabase.auth.sign_in_with_password({"email": email, "password": password})
         return jsonify({
-            "user": result.user,
-            "session": result.session
+            "user": response.user,
+            "session": response.session
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
