@@ -20,8 +20,8 @@ def signup():
     try:
         user = supabase.auth.sign_up({"email": email, "password": password})
         return jsonify({
-            "user": user.user,
-            "session": user.session
+            "user": response.user,
+            "session": response.session
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -34,8 +34,8 @@ def login():
     try:
         user = supabase.auth.sign_in_with_password({"email": email, "password": password})
         return jsonify({
-            "user": user.user,
-            "session": user.session
+            "user": response.user,
+            "session": response.session
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
