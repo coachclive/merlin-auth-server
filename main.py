@@ -10,7 +10,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route("/")
 def home():
-    return "Merlin Auth Server is alive."
+    return "Merlin Auth Server is live."
 
 @app.route("/signup", methods=["POST"])
 def signup():
@@ -53,6 +53,12 @@ def login():
     password = data.get("password")
     try:
         result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+<<<<<<< HEAD
+=======
+        if not result.user or not result.session:
+            return jsonify({"error": "Invalid email or password"}), 401
+
+>>>>>>> a76769b (Add /reset-password route)
         display_name = result.user.user_metadata.get("display_name", "")
         return jsonify({
             "user": {
@@ -73,6 +79,21 @@ def login():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.json
+    email = data.get("email")
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
 
+<<<<<<< HEAD
+=======
+    try:
+        supabase.auth.reset_password_email(email)
+        return "", 204  # No content = success
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+>>>>>>> a76769b (Add /reset-password route)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
