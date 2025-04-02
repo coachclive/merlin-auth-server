@@ -52,30 +52,26 @@ def login():
     email = data.get("email")
     password = data.get("password")
     try:
-        response = supabase.auth.sign_in_with_password({"email": email, "password": password})
-
-        user_data = {
-            "id": response.user.id,
-            "email": response.user.email,
-            "created_at": response.user.created_at,
-            "aud": response.user.aud,
-            "role": response.user.role
-        }
-
-        session_data = {
-            "access_token": response.session.access_token,
-            "refresh_token": response.session.refresh_token,
-            "expires_in": response.session.expires_in,
-            "token_type": response.session.token_type
-        }
-
+        result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        display_name = result.user.user_metadata.get("display_name", "")
         return jsonify({
-            "user": user_data,
-            "session": session_data
+            "user": {
+                "id": result.user.id,
+                "email": result.user.email,
+                "created_at": result.user.created_at,
+                "aud": result.user.aud,
+                "role": result.user.role
+            },
+            "session": {
+                "access_token": result.session.access_token,
+                "refresh_token": result.session.refresh_token,
+                "expires_in": result.session.expires_in,
+                "token_type": result.session.token_type
+            },
+            "display_name": display_name
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
 
 
 if __name__ == "__main__":
