@@ -17,11 +17,31 @@ def signup():
     data = request.json
     email = data.get("email")
     password = data.get("password")
+    display_name = data.get("display_name", "")
+
     try:
-        result = supabase.auth.sign_up({"email": email, "password": password})
+        result = supabase.auth.sign_up({
+            "email": email,
+            "password": password,
+            "options": {
+                "data": {"display_name": display_name}
+            }
+        })
         return jsonify({
-            "user": result.user,
-            "session": result.session
+            "user": {
+                "id": result.user.id,
+                "email": result.user.email,
+                "created_at": result.user.created_at,
+                "aud": result.user.aud,
+                "role": result.user.role
+            },
+            "session": {
+                "access_token": result.session.access_token,
+                "refresh_token": result.session.refresh_token,
+                "expires_in": result.session.expires_in,
+                "token_type": result.session.token_type
+            },
+            "display_name": display_name
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
