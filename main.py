@@ -89,6 +89,49 @@ def reset_password():
         return "", 204  # No content = success
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+@app.route("/set-goal", methods=["POST"])
+def set_goal():
+    data = request.json
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    goal_text = data.get("goal")
+
+    if not token or not goal_text:
+        return jsonify({"error": "Missing token or goal"}), 400
+
+    try:
+        user = supabase.auth.get_user(token).user
+        user_id = user.id
+
+        # Check if goal already exists
+        existing = supabase.table("goals").select("*").eq("user_id", user_id).execute()
+        if existing.data:
+            # Update existing goal
+            supabase.table("goals").update({"goal": goal_text}).eq("user_id", user_id).execute()
+        else:
+            # Insert new goal
+            supabase.table("goals").insert({"user_id": user_id, "goal": goal_text}).execute()
+
+        return jsonify({"success": True, "goal": goal_text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/get-goal", methods=["GET"])
+def get_goal():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    try:
+        user = supabase.auth.get_user(token).user
+        user_id = user.id
+        result = supabase.table("goals").select("goal").eq("user_id", user_id).execute()
+        if result.data:
+            return jsonify({"goal": result.data[0]["goal"]})
+        else:
+            return jsonify({"goal": None})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
