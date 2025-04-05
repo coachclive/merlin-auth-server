@@ -142,6 +142,49 @@ def get_preferences():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ------------------- Commitment Tracking -------------------
+@app.route("/get-commitments", methods=["GET"])
+def get_commitments():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    try:
+        user_id = supabase.auth.get_user(token).user.id
+        result = supabase.table("commitments").select("*").eq("user_id", user_id).order("due_date", desc=False).execute()
+        return jsonify(result.data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/add-commitment", methods=["POST"])
+def add_commitment():
+    data = request.json
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    commitment_text = data.get("commitment_text")
+    due_date = data.get("due_date")
+
+    if not commitment_text:
+        return jsonify({"error": "Missing commitment text"}), 400
+
+    try:
+        user_id = supabase.auth.get_user(token).user.id
+        payload = {
+            "user_id": user_id,
+            "commitment_text": commitment_text,
+            "status": "pending"
+        }
+        if due_date:
+            payload["due_date"] = due_date
+
+        supabase.table("commitments").insert(payload).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # ------------------- Goal Management -------------------
 @app.route("/set-goal", methods=["POST"])
 def set_goal():
