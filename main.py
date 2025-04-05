@@ -1,16 +1,14 @@
-# Merlin Auth Server — Flask Backend
+# Merlin Auth Server — Flask Backend - adds session memory
 # ----------------------------------
 # This Flask application provides user authentication and goal management services for Merlin AI.
 # It integrates with Supabase to handle user sign-up, login, password reset, and personalized goal storage.
 
-# 📦 Importing necessary packages and libraries
 from flask import Flask, request, jsonify
-# 📦 Importing necessary packages and libraries
 from supabase import create_client, Client
+from datetime import datetime
 import os
 
 # Initialize Flask app
-# 🚀 Initializing the Flask app
 app = Flask(__name__)
 
 # Load Supabase environment variables
@@ -27,7 +25,6 @@ def home():
 
 # ------------------- Auth Routes -------------------
 @app.route("/signup", methods=["POST"])
-# Handles signup request and adds user to 'users' table
 def signup():
     data = request.json
     email = data.get("email")
@@ -62,7 +59,6 @@ def signup():
         return jsonify({"error": str(e)}), 400
 
 @app.route("/login", methods=["POST"])
-# Verifies login and returns session data
 def login():
     data = request.json
     email = data.get("email")
@@ -94,7 +90,6 @@ def login():
         return jsonify({"error": str(e)}), 400
 
 @app.route("/reset-password", methods=["POST"])
-# Sends password reset link to user email
 def reset_password():
     data = request.json
     email = data.get("email")
@@ -231,3 +226,29 @@ def get_goal():
 # Run app
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
+# 🧠 Save session log and summary to Supabase
+@app.route('/save-session', methods=['POST'])
+def save_session():
+    try:
+        token = request.headers.get('Authorization').split(" ")[1]
+        supabase.auth.sign_in_with_token(token)
+        user = supabase.auth.get_user()
+        user_id = user.user.id
+
+        data = request.get_json()
+        summary = data.get("summary")
+        full_log = data.get("full_log", "")
+        timestamp = datetime.utcnow().isoformat()
+
+        result = supabase.table("session_logs").insert({
+            "user_id": user_id,
+            "summary": summary,
+            "full_log": full_log,
+            "started_at": timestamp
+        }).execute()
+
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
