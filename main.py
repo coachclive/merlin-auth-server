@@ -1,11 +1,10 @@
-# Merlin Auth Server — Flask Backend - adds session memory
+# Merlin Auth Server — Flask Backend
 # ----------------------------------
 # This Flask application provides user authentication and goal management services for Merlin AI.
 # It integrates with Supabase to handle user sign-up, login, password reset, and personalized goal storage.
 
 from flask import Flask, request, jsonify
 from supabase import create_client, Client
-from datetime import datetime
 import os
 
 # Initialize Flask app
@@ -228,27 +227,27 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
 
-# 🧠 Save session log and summary to Supabase
-@app.route('/save-session', methods=['POST'])
-def save_session():
+# 🧠 Retrieve the most recent session summary for the user
+@app.route('/latest-session-summary', methods=['GET'])
+def latest_session_summary():
     try:
         token = request.headers.get('Authorization').split(" ")[1]
         supabase.auth.sign_in_with_token(token)
         user = supabase.auth.get_user()
         user_id = user.user.id
 
-        data = request.get_json()
-        summary = data.get("summary")
-        full_log = data.get("full_log", "")
-        timestamp = datetime.utcnow().isoformat()
+        result = (
+            supabase.table("session_logs")
+            .select("summary")
+            .eq("user_id", user_id)
+            .order("started_at", desc=True)
+            .limit(1)
+            .execute()
+        )
 
-        result = supabase.table("session_logs").insert({
-            "user_id": user_id,
-            "summary": summary,
-            "full_log": full_log,
-            "started_at": timestamp
-        }).execute()
-
-        return jsonify({"status": "success"}), 200
+        if result.data:
+            return jsonify({"summary": result.data[0]["summary"]})
+        else:
+            return jsonify({"summary": ""})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
