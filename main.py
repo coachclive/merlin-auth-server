@@ -1,9 +1,10 @@
-import json
+
 # Merlin Auth Server — Flask Backend
 # ----------------------------------
 # This Flask application provides user authentication and goal management services for Merlin AI.
 # It integrates with Supabase to handle user sign-up, login, password reset, and personalized goal storage.
 
+import json
 from flask import Flask, request, jsonify
 from supabase import create_client, Client
 import os
