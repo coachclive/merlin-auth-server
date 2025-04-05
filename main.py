@@ -3,11 +3,14 @@
 # This Flask application provides user authentication and goal management services for Merlin AI.
 # It integrates with Supabase to handle user sign-up, login, password reset, and personalized goal storage.
 
+# 📦 Importing necessary packages and libraries
 from flask import Flask, request, jsonify
+# 📦 Importing necessary packages and libraries
 from supabase import create_client, Client
 import os
 
 # Initialize Flask app
+# 🚀 Initializing the Flask app
 app = Flask(__name__)
 
 # Load Supabase environment variables
@@ -24,6 +27,7 @@ def home():
 
 # ------------------- Auth Routes -------------------
 @app.route("/signup", methods=["POST"])
+# Handles signup request and adds user to 'users' table
 def signup():
     data = request.json
     email = data.get("email")
@@ -58,6 +62,7 @@ def signup():
         return jsonify({"error": str(e)}), 400
 
 @app.route("/login", methods=["POST"])
+# Verifies login and returns session data
 def login():
     data = request.json
     email = data.get("email")
@@ -89,6 +94,7 @@ def login():
         return jsonify({"error": str(e)}), 400
 
 @app.route("/reset-password", methods=["POST"])
+# Sends password reset link to user email
 def reset_password():
     data = request.json
     email = data.get("email")
