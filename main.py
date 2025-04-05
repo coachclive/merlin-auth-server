@@ -1,17 +1,28 @@
+# Merlin Auth Server — Flask Backend
+# ----------------------------------
+# This Flask application provides user authentication and goal management services for Merlin AI.
+# It integrates with Supabase to handle user sign-up, login, password reset, and personalized goal storage.
+
 from flask import Flask, request, jsonify
 from supabase import create_client, Client
 import os
 
+# Initialize Flask app
 app = Flask(__name__)
 
+# Load Supabase environment variables
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+
+# Initialize Supabase client
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Health check route to verify the server is running
 @app.route("/")
 def home():
     return "Merlin Auth Server is live."
 
+# ------------------- Auth Routes -------------------
 @app.route("/signup", methods=["POST"])
 def signup():
     data = request.json
@@ -86,9 +97,52 @@ def reset_password():
 
     try:
         supabase.auth.reset_password_email(email)
-        return "", 204  # No content = success
+        return "", 204
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+# ------------------- Preferences -------------------
+@app.route("/set-preferences", methods=["POST"])
+def set_preferences():
+    data = request.json
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    try:
+        user_id = supabase.auth.get_user(token).user.id
+
+        # Upsert preferences
+        preferences = {
+            "user_id": user_id,
+            "personality_mode": data.get("personality_mode"),
+            "tone_preference": data.get("tone_preference"),
+            "allow_reflection": data.get("allow_reflection"),
+            "humor_enabled": data.get("humor_enabled")
+        }
+
+        supabase.table("preferences").upsert(preferences, on_conflict=["user_id"]).execute()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/get-preferences", methods=["GET"])
+def get_preferences():
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"error": "Missing token"}), 400
+
+    try:
+        user_id = supabase.auth.get_user(token).user.id
+        result = supabase.table("preferences").select("*").eq("user_id", user_id).execute()
+        if result.data:
+            return jsonify(result.data[0])
+        else:
+            return jsonify({"preferences": None})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ------------------- Goal Management -------------------
 @app.route("/set-goal", methods=["POST"])
 def set_goal():
     data = request.json
@@ -99,22 +153,15 @@ def set_goal():
         return jsonify({"error": "Missing token or goal"}), 400
 
     try:
-        user = supabase.auth.get_user(token).user
-        user_id = user.id
-
-        # Check if goal already exists
+        user_id = supabase.auth.get_user(token).user.id
         existing = supabase.table("goals").select("*").eq("user_id", user_id).execute()
         if existing.data:
-            # Update existing goal
-            supabase.table("goals").update({"goal": goal_text}).eq("user_id", user_id).execute()
+            supabase.table("goals").update({"goal_text": goal_text}).eq("user_id", user_id).execute()
         else:
-            # Insert new goal
-            supabase.table("goals").insert({"user_id": user_id, "goal": goal_text}).execute()
-
+            supabase.table("goals").insert({"user_id": user_id, "goal_text": goal_text, "status": "active"}).execute()
         return jsonify({"success": True, "goal": goal_text})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/get-goal", methods=["GET"])
 def get_goal():
@@ -123,15 +170,15 @@ def get_goal():
         return jsonify({"error": "Missing token"}), 400
 
     try:
-        user = supabase.auth.get_user(token).user
-        user_id = user.id
-        result = supabase.table("goals").select("goal").eq("user_id", user_id).execute()
+        user_id = supabase.auth.get_user(token).user.id
+        result = supabase.table("goals").select("goal_text").eq("user_id", user_id).execute()
         if result.data:
-            return jsonify({"goal": result.data[0]["goal"]})
+            return jsonify({"goal": result.data[0]["goal_text"]})
         else:
             return jsonify({"goal": None})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Run app
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
