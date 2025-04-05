@@ -1,3 +1,4 @@
+import json
 # Merlin Auth Server — Flask Backend
 # ----------------------------------
 # This Flask application provides user authentication and goal management services for Merlin AI.
