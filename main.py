@@ -10,6 +10,7 @@ from flask import Flask, request, jsonify
 from supabase import create_client, Client
 from datetime import datetime
 import os
+import sys
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -261,17 +262,17 @@ def save_session():
     data = request.json
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
 
-    print(">>> Saving session log...")
-    print("Token:", token)
-    print("Summary:", data.get("summary", "")[:60])
-    print("Full log entries:", len(data.get("full_log", [])))
+    print(">>> Saving session log...", file=sys.stderr); sys.stderr.flush()
+    print("Token:", token, file=sys.stderr); sys.stderr.flush()
+    print("Summary:", data.get("summary", "")[:60], file=sys.stderr); sys.stderr.flush()
+    print("Full log entries:", len(data.get("full_log", [])), file=sys.stderr); sys.stderr.flush()
 
     if not token or not data.get("summary") or not data.get("full_log"):
         return jsonify({"error": "Missing token, summary, or full_log"}), 400
 
     try:
         user_id = supabase.auth.get_user(token).user.id
-        print("User ID:", user_id)
+        print("User ID:", user_id, file=sys.stderr); sys.stderr.flush()
 
         supabase.table("session_logs").insert({
             "user_id": user_id,
@@ -280,11 +281,11 @@ def save_session():
             "started_at": datetime.utcnow().isoformat()
         }).execute()
 
-        print("✅ Session log inserted successfully.")
+        print("✅ Session log inserted successfully.", file=sys.stderr); sys.stderr.flush()
         return jsonify({"success": True})
 
     except Exception as e:
-        print("⚠️ Error saving session log:", str(e))
+        print("⚠️ Error saving session log:", str(e), file=sys.stderr); sys.stderr.flush()
         return jsonify({"error": str(e)}), 500
 
 
