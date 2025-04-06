@@ -1,3 +1,4 @@
+from datetime import datetime
 
 # Merlin Auth Server — Flask Backend
 # ----------------------------------
@@ -241,7 +242,8 @@ def save_session():
             "user_id": user_id,
             "summary": data["summary"],
             "full_log": json.dumps(data["full_log"])
-        }).execute()
+        ,
+            "started_at": datetime.utcnow().isoformat()}).execute()
 
         return jsonify({"success": True})
     except Exception as e:
