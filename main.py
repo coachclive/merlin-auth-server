@@ -1,4 +1,4 @@
-from datetime import datetime
+
 
 # Merlin Auth Server — Flask Backend
 # ----------------------------------
@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 from flask import Flask, request, jsonify
 from supabase import create_client, Client
+from datetime import datetime
 import os
 
 # Initialize Flask app
