@@ -241,8 +241,7 @@ def save_session():
         supabase.table("session_logs").insert({
             "user_id": user_id,
             "summary": data["summary"],
-            "full_log": json.dumps(data["full_log"])
-        ,
+            "full_log": json.dumps(data["full_log"]),
             "started_at": datetime.utcnow().isoformat()}).execute()
 
         return jsonify({"success": True})
