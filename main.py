@@ -225,6 +225,30 @@ def get_goal():
         return jsonify({"error": str(e)}), 500
 
 # Run app
+
+
+@app.route("/save-session", methods=["POST"])
+def save_session():
+    data = request.json
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token or not data.get("summary") or not data.get("full_log"):
+        return jsonify({"error": "Missing token, summary, or full_log"}), 400
+
+    try:
+        user_id = supabase.auth.get_user(token).user.id
+
+        supabase.table("session_logs").insert({
+            "user_id": user_id,
+            "summary": data["summary"],
+            "full_log": json.dumps(data["full_log"])
+        }).execute()
+
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
@@ -256,22 +280,3 @@ def latest_session_summary():
 
 
 # 🧠 Save session summary and full chat log
-@app.route("/save-session", methods=["POST"])
-def save_session():
-    data = request.json
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    if not token or not data.get("summary") or not data.get("full_log"):
-        return jsonify({"error": "Missing token, summary, or full_log"}), 400
-
-    try:
-        user_id = supabase.auth.get_user(token).user.id
-
-        supabase.table("session_logs").insert({
-            "user_id": user_id,
-            "summary": data["summary"],
-            "full_log": json.dumps(data["full_log"])
-        }).execute()
-
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
